@@ -1,0 +1,100 @@
+{
+  "version": "1.0.0",
+  "description": "Model alias configuration for provider-agnostic AI model selection. Edit this file or use ENV variables to change models without code changes.",
+  "providers": {
+    "openai": {
+      "displayName": "ChatGPT",
+      "company": "OpenAI",
+      "aliases": {
+        "fast": {
+          "label": "OpenAI Fast",
+          "description": "Quick responses, cost-effective",
+          "models": ["gpt-4o-mini", "gpt-3.5-turbo"],
+          "default": true
+        },
+        "default": {
+          "label": "OpenAI Standard",
+          "description": "Balanced performance",
+          "models": ["gpt-4o", "gpt-4-turbo", "gpt-4o-mini"]
+        },
+        "premium": {
+          "label": "OpenAI Premium",
+          "description": "Maximum capability",
+          "models": ["gpt-4o", "gpt-4-turbo"]
+        }
+      }
+    },
+    "anthropic": {
+      "displayName": "Claude",
+      "company": "Anthropic",
+      "aliases": {
+        "fast": {
+          "label": "Claude Fast",
+          "description": "Quick responses",
+          "models": ["claude-haiku-4-5-20251001", "claude-3-5-haiku-20241022"],
+          "default": true
+        },
+        "default": {
+          "label": "Claude Standard",
+          "description": "Best overall balance",
+          "models": ["claude-sonnet-4-5-20250929", "claude-3-5-sonnet-20241022"]
+        },
+        "premium": {
+          "label": "Claude Premium",
+          "description": "Maximum intelligence",
+          "models": ["claude-opus-4-5-20251101", "claude-sonnet-4-5-20250929"]
+        }
+      }
+    },
+    "google": {
+      "displayName": "Gemini",
+      "company": "Google",
+      "aliases": {
+        "fast": {
+          "label": "Gemini Fast",
+          "description": "Fast and cost-efficient",
+          "models": ["gemini-2.5-flash-lite", "gemini-2.0-flash-lite"],
+          "default": true
+        },
+        "default": {
+          "label": "Gemini Standard",
+          "description": "Best price-performance",
+          "models": ["gemini-2.5-flash", "gemini-2.0-flash"]
+        },
+        "premium": {
+          "label": "Gemini Premium",
+          "description": "Most capable for complex reasoning",
+          "models": ["gemini-2.5-pro", "gemini-2.5-flash"]
+        }
+      }
+    },
+    "perplexity": {
+      "displayName": "Perplexity",
+      "company": "Perplexity AI",
+      "aliases": {
+        "fast": {
+          "label": "Perplexity Fast",
+          "description": "Quick search responses",
+          "models": ["sonar"],
+          "default": true
+        },
+        "default": {
+          "label": "Perplexity Standard",
+          "description": "Enhanced search",
+          "models": ["sonar-pro", "sonar"]
+        },
+        "premium": {
+          "label": "Perplexity Premium",
+          "description": "Advanced reasoning with DeepSeek-R1",
+          "models": ["sonar-reasoning-pro", "sonar-reasoning"]
+        }
+      }
+    }
+  },
+  "legacyMapping": {
+    "chatgpt": "openai",
+    "claude": "anthropic",
+    "gemini": "google",
+    "perplexity": "perplexity"
+  }
+}

@@ -1,0 +1,25 @@
+# Node / build artifacts
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store
+
+# Env and local files
+.env
+.env.*
+.DS_Store
+
+# Git / IDE
+.git
+.gitignore
+.vscode
+.idea
+
+# Runtime data (mounted as volume in compose)
+data
+
+# Logs
+logs*
+*.log
+

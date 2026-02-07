@@ -1,0 +1,142 @@
+import pkg from 'pg';
+const { Client } = pkg;
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+async function runMigration() {
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: false
+  });
+
+  try {
+    console.log('Connecting to database...');
+    await client.connect();
+    await client.query(`
+  CREATE EXTENSION IF NOT EXISTS "uuid-ossp"
+`);
+    console.log('✅ Connected!');
+
+    console.log('Running migration: Adding model_version column...');
+
+    await client.query(`
+  CREATE TABLE IF NOT EXISTS visibility_scans (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID,
+    brand_name VARCHAR(255),
+    scan_result JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  )
+`);
+
+await client.query(`
+  ALTER TABLE visibility_scans
+  ADD COLUMN IF NOT EXISTS model_version VARCHAR(100)
+`);
+
+    console.log('✅ model_version column added (or already exists)');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_visibility_scans_model_version
+      ON visibility_scans(model_version)
+    `);
+    console.log('✅ Index created (or already exists)');
+
+    // Create action_plans table if it doesn't exist
+    console.log('Running migration: Creating action_plans table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS action_plans (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        brand_name VARCHAR(255) NOT NULL,
+        plan_data JSONB NOT NULL,
+        data_summary JSONB DEFAULT '{}'::jsonb,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+    console.log('✅ action_plans table created (or already exists)');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_action_plans_user_id
+      ON action_plans(user_id)
+    `);
+    console.log('✅ action_plans index created (or already exists)');
+
+    // Create user_models table for dynamic AI model management
+    console.log('Running migration: Creating user_models table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_models (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id UUID,
+        provider VARCHAR(50) NOT NULL,
+        model_id VARCHAR(100) NOT NULL,
+        display_name VARCHAR(100) NOT NULL,
+        description VARCHAR(255),
+        is_default BOOLEAN DEFAULT false,
+        sort_order INTEGER DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        UNIQUE(user_id, provider, model_id)
+      )
+    `);
+    console.log('✅ user_models table created (or already exists)');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_user_models_user_provider
+      ON user_models(user_id, provider)
+    `);
+    console.log('✅ user_models index created (or already exists)');
+
+    // Add model_alias column for the provider-agnostic alias system
+    // The model_version column will continue to store what was used (alias or actual model)
+    // This new column explicitly tracks the alias for display purposes
+    console.log('Running migration: Adding model_alias column for alias system...');
+    await client.query(`
+      ALTER TABLE visibility_scans
+      ADD COLUMN IF NOT EXISTS model_alias VARCHAR(100)
+    `);
+    console.log('✅ model_alias column added (or already exists)');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_visibility_scans_model_alias
+      ON visibility_scans(model_alias)
+    `);
+    console.log('✅ model_alias index created (or already exists)');
+
+    // Add missing columns to website_scans table
+    console.log('Running migration: Adding website_scans columns...');
+    await client.query(`
+      ALTER TABLE website_scans
+      ADD COLUMN IF NOT EXISTS ai_visibility_factors JSONB DEFAULT '{}'::jsonb,
+      ADD COLUMN IF NOT EXISTS priority_actions JSONB DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS content_gaps JSONB DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS competitive_insights TEXT,
+      ADD COLUMN IF NOT EXISTS recommended_content TEXT
+    `);
+    console.log('✅ website_scans columns added (or already exist)');
+
+    // Add missing columns to sentiment_analyses table
+    console.log('Running migration: Adding sentiment_analyses columns...');
+    await client.query(`
+      ALTER TABLE sentiment_analyses
+      ADD COLUMN IF NOT EXISTS ai_visibility_strategies JSONB DEFAULT '{}'::jsonb,
+      ADD COLUMN IF NOT EXISTS citation_opportunities JSONB DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS content_topics JSONB DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS industry_publications JSONB DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS key_messages JSONB DEFAULT '[]'::jsonb
+    `);
+    console.log('✅ sentiment_analyses columns added (or already exist)');
+
+    console.log('\n🎉 Migration complete!');
+
+  } catch (error) {
+    console.error('❌ Migration error:', error.message);
+    process.exit(1);
+  } finally {
+    await client.end();
+  }
+}
+
+runMigration();

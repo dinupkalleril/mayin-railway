@@ -1,0 +1,41 @@
+{
+  "generated_at": "2025-12-17T15:35:28.200Z",
+  "count": 5,
+  "licenses": [
+    {
+      "key": "F05F-BB85-43DD-FF6F",
+      "status": "available",
+      "tier": "standard",
+      "expires": null,
+      "max_activations": 1
+    },
+    {
+      "key": "0E3E-B1ED-0402-3AB8",
+      "status": "available",
+      "tier": "standard",
+      "expires": null,
+      "max_activations": 1
+    },
+    {
+      "key": "7140-3129-31BF-A8E8",
+      "status": "available",
+      "tier": "standard",
+      "expires": null,
+      "max_activations": 1
+    },
+    {
+      "key": "BE6E-340C-DA79-58DE",
+      "status": "available",
+      "tier": "standard",
+      "expires": null,
+      "max_activations": 1
+    },
+    {
+      "key": "7C93-CE49-1761-93CE",
+      "status": "available",
+      "tier": "standard",
+      "expires": null,
+      "max_activations": 1
+    }
+  ]
+}

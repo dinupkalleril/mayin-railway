@@ -1,0 +1,8 @@
+BEGIN;
+
+ALTER TABLE website_scans
+ADD COLUMN IF NOT EXISTS issues JSONB,
+ADD COLUMN IF NOT EXISTS suggestions JSONB,
+ADD COLUMN IF NOT EXISTS recommended_content TEXT;
+
+COMMIT;

@@ -1,0 +1,69 @@
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: aio-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: aiodb
+      POSTGRES_USER: aiouser
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aiouser -d aiodb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+
+  backend:
+    build:
+      context: ./aio-backend
+    image: dinupkalleril/aio-backend:latest
+    container_name: aio-backend
+
+    ports:
+      - "3001:3001"
+
+    environment:
+      # 🔐 License
+      LICENSE_SIGNING_SECRET: ${LICENSE_SIGNING_SECRET}
+      # 🗄️ PostgreSQL (THIS FIXES THE ERROR)
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: aiouser
+      PGPASSWORD: changeme
+      PGDATABASE: aiodb
+
+
+  frontend:
+    build:
+      context: ./aio-frontend
+      args:
+        NEXT_PUBLIC_BACKEND_URL: http://aio-backend:3001
+    image: dinupkalleril/aio-frontend:latest
+    container_name: aio-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_BACKEND_URL: http://aio-backend:3001
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: aio-network
+
+
+
+
+
+
+
+
+
