@@ -18,7 +18,8 @@ import { licenseGuard } from './middleware/licenseGuard.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
+
 
 // ============================
 // CORS CONFIG (Railway-safe)
