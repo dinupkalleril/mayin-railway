@@ -1,37 +1,15 @@
-import pkg from 'pg';
-const { Client } = pkg;
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { pool } from "./db.js";
 
 async function runMigration() {
-  const client = new Client(
-    process.env.DATABASE_URL
-      ? {
-          connectionString: process.env.DATABASE_URL,
-          ssl: { rejectUnauthorized: false }, // Railway requires SSL
-        }
-      : {
-          host: process.env.POSTGRES_HOST || 'postgres',
-          port: Number(process.env.POSTGRES_PORT) || 5432,
-          user: process.env.POSTGRES_USER,
-          password: process.env.POSTGRES_PASSWORD,
-          database: process.env.POSTGRES_DB,
-          ssl: false,
-        }
-  );
-
   try {
-    console.log('Connecting to database...');
-    await client.connect();
-    console.log('✅ Connected!');
+    console.log("Running database migrations...");
 
     /* ---------- extensions ---------- */
-    await client.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
+    await pool.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
 
     /* ---------- base tables ---------- */
 
-    await client.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS licenses (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         license_key TEXT UNIQUE NOT NULL,
@@ -40,7 +18,7 @@ async function runMigration() {
       );
     `);
 
-    await client.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         username VARCHAR(255) UNIQUE NOT NULL,
@@ -50,7 +28,7 @@ async function runMigration() {
       );
     `);
 
-    await client.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS api_keys (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -70,7 +48,7 @@ async function runMigration() {
 
     /* ---------- api_keys schema evolution ---------- */
 
-    await client.query(`
+    await pool.query(`
       ALTER TABLE api_keys
       ADD COLUMN IF NOT EXISTS chatgpt_key TEXT,
       ADD COLUMN IF NOT EXISTS claude_key TEXT,
@@ -80,12 +58,12 @@ async function runMigration() {
       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
     `);
 
-    await client.query(`
+    await pool.query(`
       ALTER TABLE api_keys
       DROP CONSTRAINT IF EXISTS api_keys_user_id_provider_key;
     `);
 
-    await client.query(`
+    await pool.query(`
       DO $$
       BEGIN
         IF NOT EXISTS (
@@ -99,7 +77,7 @@ async function runMigration() {
 
     /* ---------- license schema evolution ---------- */
 
-    await client.query(`
+    await pool.query(`
       ALTER TABLE licenses
       ADD COLUMN IF NOT EXISTS machine_id TEXT,
       ADD COLUMN IF NOT EXISTS activated_at TIMESTAMPTZ,
@@ -112,7 +90,7 @@ async function runMigration() {
       ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMPTZ;
     `);
 
-    await client.query(`
+    await pool.query(`
       DO $$
       BEGIN
         IF EXISTS (
@@ -187,7 +165,7 @@ async function runMigration() {
 
     /* ---------- brands ---------- */
 
-    await client.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS brands (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -203,7 +181,7 @@ async function runMigration() {
       );
     `);
 
-    await client.query(`
+    await pool.query(`
       ALTER TABLE brands
       ADD COLUMN IF NOT EXISTS tagline TEXT,
       ADD COLUMN IF NOT EXISTS product_details TEXT,
@@ -214,7 +192,7 @@ async function runMigration() {
 
     /* ---------- visibility_scans ---------- */
 
-    await client.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS visibility_scans (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -235,7 +213,7 @@ async function runMigration() {
       );
     `);
 
-    await client.query(`
+    await pool.query(`
       ALTER TABLE visibility_scans
       ADD COLUMN IF NOT EXISTS brand_info JSONB,
       ADD COLUMN IF NOT EXISTS ai_model VARCHAR(100),
@@ -247,7 +225,7 @@ async function runMigration() {
 
     /* ---------- action_plans ---------- */
 
-    await client.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS action_plans (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID,
@@ -259,14 +237,14 @@ async function runMigration() {
       );
     `);
 
-    await client.query(`
+    await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_action_plans_user_id
       ON action_plans(user_id);
     `);
 
     /* ---------- user_models ---------- */
 
-    await client.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS user_models (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID,
@@ -282,14 +260,14 @@ async function runMigration() {
       );
     `);
 
-    await client.query(`
+    await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_user_models_user_provider
       ON user_models(user_id, provider);
     `);
 
     /* ---------- website_scans ---------- */
 
-    await client.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS website_scans (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID,
@@ -299,7 +277,7 @@ async function runMigration() {
       );
     `);
 
-    await client.query(`
+    await pool.query(`
       ALTER TABLE website_scans
       ADD COLUMN IF NOT EXISTS ai_visibility_factors JSONB DEFAULT '{}'::jsonb,
       ADD COLUMN IF NOT EXISTS priority_actions JSONB DEFAULT '[]'::jsonb,
@@ -310,7 +288,7 @@ async function runMigration() {
 
     /* ---------- sentiment_analyses ---------- */
 
-    await client.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS sentiment_analyses (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID,
@@ -320,7 +298,7 @@ async function runMigration() {
       );
     `);
 
-    await client.query(`
+    await pool.query(`
       ALTER TABLE sentiment_analyses
       ADD COLUMN IF NOT EXISTS ai_visibility_strategies JSONB DEFAULT '{}'::jsonb,
       ADD COLUMN IF NOT EXISTS citation_opportunities JSONB DEFAULT '[]'::jsonb,
@@ -331,11 +309,11 @@ async function runMigration() {
 
     /* ---------- indexes ---------- */
 
-    await client.query(`
+    await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
     `);
 
-    await client.query(`
+    await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_users_license_key ON users(license_key);
     `);
 
@@ -343,9 +321,7 @@ async function runMigration() {
   } catch (error) {
     console.error('❌ Migration error:', error.message);
     throw error;
-  } finally {
-    await client.end();
-  }
+  } 
 }
 
 // 🔐 IMPORTANT: Do NOT auto-run migrations on Railway
