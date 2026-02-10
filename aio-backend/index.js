@@ -143,27 +143,41 @@ async function verifySchema(db) {
   }
 }
 
+async function waitForDatabase(retries = 10, delay = 3000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await pool.query("SELECT 1");
+      console.log("✅ Database is ready");
+      return;
+    } catch (err) {
+      console.log(`⏳ Waiting for database... (${i + 1}/${retries})`);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw new Error("Database not ready after retries");
+}
+
 async function start() {
   try {
-    if (!pool) {
-      throw new Error("DATABASE_URL not connected yet. Ensure Postgres is linked.");
-    }
-    
+    // ✅ wait until Postgres is actually ready
+    await waitForDatabase();
+
+    // ✅ now it is safe to verify schema
     await verifySchema(pool);
-    
 
     app.listen(PORT, () => {
       console.log(`🚀 AI Optimization Backend running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (err) {
-    console.error('[Startup] Fatal error:', err.message);
+    console.error("[Startup] Fatal error:", err.message);
     // Delay exit to avoid Railway rapid-restart loop
     setTimeout(() => process.exit(1), 5000);
   }
 }
 
 start();
+
 
 // ============================
 // GRACEFUL SHUTDOWN
