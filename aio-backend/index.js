@@ -145,7 +145,12 @@ async function verifySchema(db) {
 
 async function start() {
   try {
+    if (!pool) {
+      throw new Error("DATABASE_URL not connected yet. Ensure Postgres is linked.");
+    }
+    
     await verifySchema(pool);
+    
 
     app.listen(PORT, () => {
       console.log(`🚀 AI Optimization Backend running on port ${PORT}`);
