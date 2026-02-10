@@ -146,6 +146,7 @@ async function verifySchema(db) {
 async function waitForDatabase(retries = 40, delay = 3000) {
   for (let i = 0; i < retries; i++) {
     try {
+      const pool = getPool();
       await pool.query("SELECT 1");
       console.log("✅ Database is ready");
       return;
@@ -154,31 +155,27 @@ async function waitForDatabase(retries = 40, delay = 3000) {
       await new Promise((r) => setTimeout(r, delay));
     }
   }
-
   throw new Error("Database not ready after retries");
 }
 
-
 async function start() {
   try {
-    // ✅ wait until Postgres is actually ready
     await waitForDatabase();
 
-    // ✅ now it is safe to verify schema
+    const pool = getPool();
     await verifySchema(pool);
 
     app.listen(PORT, () => {
       console.log(`🚀 AI Optimization Backend running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (err) {
     console.error("[Startup] Fatal error:", err.message);
-    // Delay exit to avoid Railway rapid-restart loop
     setTimeout(() => process.exit(1), 5000);
   }
 }
 
 start();
+
 
 
 // ============================
