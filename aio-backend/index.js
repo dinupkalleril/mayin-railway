@@ -143,10 +143,9 @@ async function verifySchema(db) {
   }
 }
 
-async function waitForDatabase(retries = 40, delay = 3000) {
+async function waitForDatabase(retries = 30, delay = 3000) {
   for (let i = 0; i < retries; i++) {
     try {
-      const pool = getPool();
       await pool.query("SELECT 1");
       console.log("✅ Database is ready");
       return;
@@ -158,15 +157,15 @@ async function waitForDatabase(retries = 40, delay = 3000) {
   throw new Error("Database not ready after retries");
 }
 
+
+
 async function start() {
   try {
     await waitForDatabase();
-
-    const pool = getPool();
     await verifySchema(pool);
 
     app.listen(PORT, () => {
-      console.log(`🚀 AI Optimization Backend running on port ${PORT}`);
+      console.log(`🚀 Backend running on port ${PORT}`);
     });
   } catch (err) {
     console.error("[Startup] Fatal error:", err.message);
