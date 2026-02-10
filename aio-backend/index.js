@@ -143,7 +143,7 @@ async function verifySchema(db) {
   }
 }
 
-async function waitForDatabase(retries = 10, delay = 3000) {
+async function waitForDatabase(retries = 40, delay = 3000) {
   for (let i = 0; i < retries; i++) {
     try {
       await pool.query("SELECT 1");
@@ -154,8 +154,10 @@ async function waitForDatabase(retries = 10, delay = 3000) {
       await new Promise((r) => setTimeout(r, delay));
     }
   }
+
   throw new Error("Database not ready after retries");
 }
+
 
 async function start() {
   try {
