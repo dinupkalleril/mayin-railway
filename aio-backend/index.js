@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { pool } from './config/db.js';
+import path from "path";
+import { fileURLToPath } from "url";
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -19,6 +21,9 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 
 // ============================
@@ -103,7 +108,17 @@ app.use('/api/action-plan', licenseGuard, actionPlanRoutes);
 app.use('/api/models', licenseGuard, modelsRoutes);
 
 // ============================
-// ERROR HANDLER
+// SERVE FRONTEND (AFTER API ROUTES)
+// ============================
+
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// ============================
+// ERROR HANDLER (MUST BE LAST)
 // ============================
 
 app.use((err, req, res, next) => {
@@ -113,6 +128,8 @@ app.use((err, req, res, next) => {
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 });
+
+
 
 // ============================
 // STARTUP LOGIC
