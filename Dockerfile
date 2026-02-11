@@ -30,5 +30,6 @@
     ENV PORT=3000
     EXPOSE 3000
     
-    CMD ["node", "frontend/server.js"]
+    CMD ["node", "server.js"]
+
     
