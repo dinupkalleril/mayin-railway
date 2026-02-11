@@ -19,7 +19,8 @@ import { licenseGuard } from './middleware/licenseGuard.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.BACKEND_PORT || 8080;
+const PORT = 8081;
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
