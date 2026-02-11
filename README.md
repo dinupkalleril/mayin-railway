@@ -108,6 +108,19 @@ If something doesn’t work:
 - Confirm environment variables are filled
 - Ensure PostgreSQL plugin is added
 
+### Database not ready after retries
+- Cause: Backend cannot reach PostgreSQL (missing plugin, wrong `DATABASE_URL`, or DB still starting).
+- Fix:
+  - Open your Railway project → Services → select the backend service → Variables. Ensure `DATABASE_URL` exists and points to your PostgreSQL.
+  - If you don’t see a database, add one: New → Add Plugin → PostgreSQL. Railway will inject `DATABASE_URL` automatically.
+  - Give the DB more time to start on first boot by setting (in the backend service):
+    - `DB_STARTUP_RETRIES=60`
+    - `DB_STARTUP_DELAY_MS=5000`
+  - Check backend logs for lines like `🔌 DB target → host: ...` and per‑retry errors (e.g., `ECONNREFUSED`, `ENOTFOUND`). These hint at networking or URL typos.
+
+### Run migrations (optional but recommended)
+- From the backend service, add variable `RUN_MIGRATIONS=true` and redeploy once, then remove it. This creates/updates tables if deploying to a new database.
+
 For licensing or support questions, contact the Mayin team.
 
 ---

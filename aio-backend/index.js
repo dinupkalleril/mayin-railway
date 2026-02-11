@@ -150,7 +150,9 @@ async function waitForDatabase(retries = 30, delay = 3000) {
       console.log("✅ Database is ready");
       return;
     } catch (err) {
-      console.log(`⏳ Waiting for database... (${i + 1}/${retries})`);
+      const code = err.code || err.name || 'UNKNOWN_ERROR';
+      const msg = err.message || 'no message';
+      console.log(`⏳ Waiting for database... (${i + 1}/${retries}) [${code}] ${msg}`);
       await new Promise((r) => setTimeout(r, delay));
     }
   }
@@ -161,7 +163,20 @@ async function waitForDatabase(retries = 30, delay = 3000) {
 
 async function start() {
   try {
-    await waitForDatabase();
+    const retries = parseInt(process.env.DB_STARTUP_RETRIES || '60', 10);
+    const delay = parseInt(process.env.DB_STARTUP_DELAY_MS || '5000', 10);
+
+    // Helpful visibility into DATABASE_URL host/port (redacted)
+    try {
+      const url = new URL(process.env.DATABASE_URL);
+      console.log(
+        `🔌 DB target → host: ${url.hostname}, port: ${url.port || '5432'}, db: ${url.pathname.replace('/', '')}`
+      );
+    } catch {
+      console.log('🔌 DB target → could not parse DATABASE_URL');
+    }
+
+    await waitForDatabase(retries, delay);
     await verifySchema(pool);
 
     app.listen(PORT, () => {
