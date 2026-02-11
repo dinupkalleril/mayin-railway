@@ -1,7 +1,6 @@
-import './aio-backend/index.js';
+import './index.js';
 import { spawn } from 'child_process';
 
-// Start Next standalone server
 const next = spawn('node', ['frontend/server.js'], {
   stdio: 'inherit',
   env: process.env,
