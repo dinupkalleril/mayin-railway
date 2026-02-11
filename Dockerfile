@@ -7,7 +7,7 @@
     RUN npm install
     
     COPY aio-frontend .
-    RUN npm run build && npm run export
+    RUN npm run build
     
     
     # ---------- Stage 2: Build Backend ----------
@@ -15,18 +15,20 @@
     
     WORKDIR /app
     
-    # Install backend dependencies
+    # Install backend deps
     COPY aio-backend/package*.json ./
     RUN npm install --production
     
     # Copy backend source
     COPY aio-backend .
     
-    # Copy built frontend static files into backend public folder
-    COPY --from=frontend-builder /frontend/out ./public
+    # Copy Next standalone build
+    COPY --from=frontend-builder /frontend/.next/standalone ./frontend
+    COPY --from=frontend-builder /frontend/.next/static ./frontend/.next/static
+    COPY --from=frontend-builder /frontend/public ./frontend/public
     
     ENV PORT=3000
     EXPOSE 3000
     
-    CMD ["npm", "run", "start"]
+    CMD ["node", "frontend/server.js"]
     

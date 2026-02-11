@@ -1,5 +1,4 @@
 import express from 'express';
-import cors from 'cors';
 import dotenv from 'dotenv';
 import { pool } from './config/db.js';
 import path from "path";
@@ -20,47 +19,11 @@ import { licenseGuard } from './middleware/licenseGuard.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.BACKEND_PORT || 8080;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-
-// ============================
-// CORS CONFIG (Railway-safe)
-// ============================
-
-const allowList = [
-  process.env.FRONTEND_ORIGIN,
-  'http://localhost:3000',
-  'http://143.244.130.11:3000',
-  /\.up\.railway\.app$/,
-].filter(Boolean);
-
-const corsOptions = {
-  origin: (origin, callback) => {
-    console.log(`CORS Check: origin='${origin}'`);
-
-    // Allow server-to-server / health checks
-    if (!origin) {
-      return callback(null, true);
-    }
-
-    const allowed = allowList.some((o) =>
-      o instanceof RegExp ? o.test(origin) : o === origin
-    );
-
-    console.log(`CORS Result: ${allowed ? 'ALLOWED' : 'DENIED'}`);
-
-    callback(null, allowed);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-};
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 // ============================
 // BODY PARSERS
@@ -107,15 +70,6 @@ app.use('/api/sentiment', licenseGuard, sentimentRoutes);
 app.use('/api/action-plan', licenseGuard, actionPlanRoutes);
 app.use('/api/models', licenseGuard, modelsRoutes);
 
-// ============================
-// SERVE FRONTEND (AFTER API ROUTES)
-// ============================
-
-app.use(express.static(path.join(__dirname, "public")));
-
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
 
 // ============================
 // ERROR HANDLER (MUST BE LAST)
